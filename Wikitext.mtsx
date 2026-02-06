@@ -1,0 +1,184 @@
+{
+    name: ["Wikitext", ".wiki", ".wikitext", ".mediawiki"]
+    ignoreCase: true
+    styles: [
+        "heading" > "keyword", @B
+        "boldText" > "keyword", @B
+        "wikiLink", #0066CC, #4A9EFF, @U
+        "externalLink", #3366CC, #5A9EFF, @U
+        "template", #CC6633, #E69966
+        "templateName", #CC6633, #E69966, @B
+        "templateParam", #FF9933, #FFB366
+        "table", #663399, #9966CC
+        "tableCell", #663399, #9966CC
+        "tableHeader", #663399, #9966CC, @B
+        "listMarker", #666666, #888888
+        "signature", #999999, #AAAAAA
+        "timestamp", #999999, #AAAAAA
+        "magicWord", #CC0000, #FF4444, @B
+        "tagName", #008000, #6A8759
+        "italicText" > "string", @I
+        "boldItalicText" > "keyword", @BI
+    ]
+    comment: {startsWith: "<!--", endsWith: "-->"}
+    bracketPairs: ["{}", "[]", "()"]
+    defines: [
+        "identifier": /[a-zA-Z_][\w\-]*/
+        "linkTarget": /(?:[a-zA-Z_][\w\-]*:)?[a-zA-Z_][\w\-]*(?:\/[a-zA-Z_][\w\-]*)*/
+        "htmlTag": /[a-zA-Z][\w\-]*/
+        "escape": [
+            {match: /&(?:amp|lt|gt|quot|apos|nbsp|#(?:x[0-9a-fA-F]+|\d+));/, 0: "strEscape"}
+        ]
+        "signature": {match: /~{3,5}/, 0: "signature"}
+        "timestamp": {match: /~{5}/, 0: "timestamp"}
+        "bold": {match: /'''/, 0: "keyword"}
+        "italic": {match: /''/, 0: "keyword"}
+        "boldItalic": {match: /'''''/, 0: "boldItalic"}
+        "horizontalRule": {match: /(?m)^-{4,}\s*$/, 0: "operator"}
+        "indent": {match: /(?m)^:+/, 0: "listMarker"}
+        "bulletList": {match: /(?m)^\*+/, 0: "listMarker"}
+        "numberList": {match: /(?m)^#+/, 0: "listMarker"}
+        "defList": {match: /(?m)^;|^:\s*/, 0: "listMarker"}
+    ]
+    contains: [
+        {
+            start: {match: /<!--/}
+            end: {match: /-->/}
+            style: "comment"
+            mustMatchEnd: true
+        }
+        {match: /(?m)^======\s*(.+?)\s*======\s*$/, 0: "heading", 1: "heading"}
+        {match: /(?m)^=====\s*(.+?)\s*=====\s*$/, 0: "heading", 1: "heading"}
+        {match: /(?m)^====\s*(.+?)\s*====\s*$/, 0: "heading", 1: "heading"}
+        {match: /(?m)^===\s*(.+?)\s*===\s*$/, 0: "heading", 1: "heading"}
+        {match: /(?m)^==\s*(.+?)\s*==\s*$/, 0: "heading", 1: "heading"}
+        {match: /(?m)^=\s*(.+?)\s*=\s*$/, 0: "heading", 1: "heading"}
+        {
+            start: {match: /'''''/}
+            end: {match: /'''''/}
+            style: "boldItalicText"
+            contains: [
+                {match: /\\./, 0: "strEscape"}
+            ]
+        }
+        {
+            start: {match: /'''/}
+            end: {match: /'''/}
+            style: "boldText"
+            contains: [
+                {match: /\\./, 0: "strEscape"}
+            ]
+        }
+        {
+            start: {match: /''/}
+            end: {match: /''/}
+            style: "italicText"
+            contains: [
+                {match: /\\./, 0: "strEscape"}
+            ]
+        }
+        {include: "horizontalRule"}
+        {include: "timestamp"}
+        {include: "signature"}
+        {
+            start: {match: /\[\[/}
+            end: {match: /\]\]/}
+            style: "wikiLink"
+            contains: [
+                {match: /([^|\]]+)(?=[|\]])/, 0: "wikiLink"}
+                {match: /\|/, 0: "operator"}
+                {match: /(?<=\|)([^\]]+)/, 0: "string"}
+                {match: /#/, 0: "operator"}
+            ]
+        }
+        {
+            start: {match: /\[(?=[a-zA-Z][\w\-]*:)/}
+            end: {match: /\]/}
+            style: "externalLink"
+            contains: [
+                {match: /([a-zA-Z][\w\-]*:\/\/[^\s\]]+)/, 0: "externalLink"}
+                {match: /\s+([^\]]+)/, 1: "string"}
+            ]
+        }
+        {
+            start: {match: /\{\{/}
+            end: {match: /\}\}/}
+            style: "template"
+            contains: [
+                {match: /\s*([a-zA-Z_][\w\-]*)\s*/, 1: "templateName"}
+                {match: /\|/, 0: "operator"}
+                {match: /([a-zA-Z_][\w\-]*)\s*=/, 1: "templateParam"}
+                {
+                    start: {match: /\{\{/}
+                    end: {match: /\}\}/}
+                    style: "template"
+                }
+            ]
+        }
+        {
+            start: {match: /\{\|/}
+            end: {match: /\|\}/}
+            style: "table"
+            contains: [
+                {match: /\s*([a-zA-Z_][\w\-]*)\s*=\s*("[^"]*"|'[^']*'|[^\s|]*)/, 1: "attrName", 2: "propVal"}
+                {match: /\|-/, 0: "table"}
+                {
+                    start: {match: /(?m)^!/}
+                    end: {match: /(?=!!|\|\||\|-|\|\}|\n)/}
+                    style: "tableHeader"
+                    contains: [
+                        {match: /!!/, 0: "operator"}
+                    ]
+                }
+                {
+                    start: {match: /(?m)^\|/}
+                    end: {match: /(?=\|\||\|-|\|\}|\n)/}
+                    style: "tableCell"
+                    contains: [
+                        {match: /\|\|/, 0: "operator"}
+                    ]
+                }
+                {match: /(?:^|\|)\s*([a-zA-Z_][\w\-]*)\s*=\s*("[^"]*"|'[^']*'|[^\s|]*)/, 1: "attrName", 2: "propVal"}
+            ]
+        }
+        {include: "bulletList"}
+        {include: "numberList"}
+        {include: "indent"}
+        {include: "defList"}
+        {match: /__(TOC|NOTOC|NOEDITSECTION|FORCETOC|NEWSECTIONLINK|NOCONTENTCONVERT|NOCC|NOTITLECONVERT|NOTC|START|END)__/, 0: "magicWord"}
+        {match: /(?mi)^\s*#REDIRECT\s*\[\[/, 0: "magicWord"}
+        {
+            start: {match: /<([a-zA-Z][\w\-]*)/, 1: "tagName"}
+            end: {match: ">|/>"}
+            style: "meta"
+            contains: [
+                {match: /\s([a-zA-Z_][\w\-]*)\s*=\s*/, 1: "attrName"}
+                {
+                    start: {match: /"/}
+                    end: {match: /(?m)"|$/}
+                    style: "string"
+                }
+                {
+                    start: {match: /'/}
+                    end: {match: /(?m)'|$/}
+                    style: "string"
+                }
+            ]
+        }
+        {match: /<\/([a-zA-Z][\w\-]*)>/, 1: "tagName"}
+        {
+            start: {match: /<(nowiki|ref|references|syntaxhighlight|source|math|pre|code|gallery|timeline|imagemap|inputbox|indicator)\b[^>]*>/, 1: "tagName"}
+            end: {match: /<\/\1>/}
+            style: "string"
+            childrenStyle: "default"
+        }
+        {match: /\[\[Category:([^\]]+)\]\]/, 0: "meta", 1: "namespace"}
+        {match: /\[\[File:([^\]|]+)/, 0: "meta", 1: "namespace"}
+        {match: /\[\[Image:([^\]|]+)/, 0: "meta", 1: "namespace"}
+        {match: /\[\[([a-zA-Z_][\w\-]*):/, 1: "namespace"}
+        {match: /\{\{\s*([a-zA-Z_][\w\-]*)\s*\}\}/, 0: "template", 1: "templateName"}
+        {match: /\{\{\s*#([a-zA-Z_][\w\-]*)\s*:/, 0: "magicWord", 1: "keyword"}
+        {include: "escape"}
+        {builtin: #NORMAL_NUMBER#}
+    ]
+}
